@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>6分間歩行試験 入力</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main class="app" role="application">
+        <section id="measurementView" class="panel-view" aria-label="計測入力パネル">
+            <div class="panel-grid">
+                <button class="panel panel-spo2" data-metric="spo2" type="button" aria-label="SpO₂入力">
+                    <span class="panel-title">SpO₂</span>
+                    <span class="panel-value" data-metric-value>--</span>
+                    <span class="panel-status" data-metric-status>未入力</span>
+                </button>
+                <button class="panel panel-pulse" data-metric="pulse" type="button" aria-label="脈拍入力">
+                    <span class="panel-title">脈拍</span>
+                    <span class="panel-value" data-metric-value>--</span>
+                    <span class="panel-status" data-metric-status>未入力</span>
+                </button>
+                <button class="panel panel-distance" data-metric="distance" type="button" aria-label="歩行距離入力">
+                    <span class="panel-title">歩行距離</span>
+                    <span class="panel-value" data-metric-value>--</span>
+                    <span class="panel-status" data-metric-status>未入力</span>
+                </button>
+                <button class="panel panel-borg" data-metric="borg" type="button" aria-label="Borgスケール入力">
+                    <span class="panel-title">Borg</span>
+                    <span class="panel-value" data-metric-value>--</span>
+                    <span class="panel-status" data-metric-status>未入力</span>
+                </button>
+            </div>
+        </section>
+
+        <section id="completionView" class="completion-view hidden" aria-label="計測終了後入力エリア">
+            <div class="completion-card baseline-card">
+                <h2>開始時 SpO₂</h2>
+                <p id="baselineSpo2Value" class="completion-value">--</p>
+            </div>
+            <div class="completion-card recovery-card">
+                <h2>ベースライン SpO₂ までの回復時間</h2>
+                <div class="recovery-inputs">
+                    <div class="recovery-field">
+                        <label for="recoveryMinutes">分</label>
+                        <input id="recoveryMinutes" type="number" inputmode="numeric" min="0" max="30" step="1" autocomplete="off">
+                    </div>
+                    <div class="recovery-field">
+                        <label for="recoverySeconds">秒</label>
+                        <input id="recoverySeconds" type="number" inputmode="numeric" min="0" max="59" step="1" autocomplete="off">
+                    </div>
+                </div>
+                <button id="saveRecoveryBtn" type="button" class="save-recovery-btn">保存</button>
+            </div>
+        </section>
+
+        <section class="controls" aria-label="タイマー操作エリア">
+            <div class="controls-top">
+                <div class="input-cue" id="inputCue" aria-live="polite">開始前</div>
+                <div class="timer-stack">
+                    <div class="timer-display" id="timerDisplay" aria-live="polite">00:00</div>
+                    <button id="showRecordsBtn" class="show-records-btn hidden" type="button">記録を表示</button>
+                </div>
+            </div>
+            <div class="control-buttons" role="group" aria-label="計測操作ボタン">
+                <button id="resetBtn" class="reset-btn" type="button" disabled>Reset</button>
+                <button id="startStopBtn" class="start-btn" type="button" disabled>Start</button>
+                <button id="commitBtn" class="commit-btn" type="button" disabled>決定</button>
+            </div>
+            <div class="minute-prompts" id="minutePrompts" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <div class="modal hidden" id="inputModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-backdrop" data-dismiss="modal"></div>
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="modalTitle">入力</h2>
+                <button class="modal-close" type="button" aria-label="閉じる" data-dismiss="modal">×</button>
+            </header>
+            <div class="modal-body">
+                <label for="metricInput" class="modal-label" id="metricInputLabel">値を入力</label>
+                <input id="metricInput" type="number" inputmode="decimal" autocomplete="one-time-code" enterkeyhint="done" />
+                <p class="modal-note" id="modalNote"></p>
+            </div>
+            <footer class="modal-footer">
+                <button class="ghost" id="cancelInputBtn" type="button">キャンセル</button>
+                <button id="saveEntryBtn" type="button">保存</button>
+            </footer>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="recordModal" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle">
+        <div class="modal-backdrop" data-dismiss="record-modal"></div>
+        <div class="modal-content record-modal-content">
+            <header class="modal-header">
+                <h2 id="recordModalTitle">今回の記録</h2>
+                <button class="modal-close" type="button" aria-label="閉じる" data-dismiss="record-modal">×</button>
+            </header>
+            <div class="modal-body">
+                <table class="record-table" aria-describedby="recordModalTitle">
+                    <thead>
+                        <tr>
+                            <th scope="col">タイミング</th>
+                            <th scope="col">SpO₂</th>
+                            <th scope="col">脈拍</th>
+                            <th scope="col">歩行距離</th>
+                            <th scope="col">Borg</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordTableBody"></tbody>
+                </table>
+                <div class="recovery-summary" id="recoverySummary"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog hidden" id="resetDialog" role="dialog" aria-modal="true" aria-labelledby="resetDialogTitle">
+        <div class="dialog-backdrop" data-dismiss="dialog"></div>
+        <div class="dialog-content">
+            <h2 id="resetDialogTitle">リセット確認</h2>
+            <p>入力内容とタイマーをリセットしますか？</p>
+            <div class="dialog-actions">
+                <button id="cancelResetBtn" type="button">キャンセル</button>
+                <button id="confirmResetBtn" type="button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js" defer></script>
+</body>
+</html>
