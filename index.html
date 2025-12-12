@@ -138,7 +138,25 @@
             </header>
             <div class="modal-body">
                 <label for="metricInput" class="modal-label" id="metricInputLabel">値を入力</label>
-                <input id="metricInput" type="number" autocomplete="one-time-code" enterkeyhint="done" />
+                <input id="metricInput" type="number" autocomplete="one-time-code" enterkeyhint="done" class="metric-input-default" />
+                
+                <!-- SpO2用スクロールピッカー -->
+                <div id="spo2PickerContainer" class="spo2-picker-container hidden">
+                    <div class="spo2-selected-value">
+                        <div class="spo2-selected-label">選択中の値</div>
+                        <div class="spo2-selected-display">
+                            <span id="spo2DisplayValue">95</span>
+                            <span class="spo2-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="spo2-picker-wrapper">
+                        <div class="spo2-picker-highlight"></div>
+                        <div class="spo2-picker-scroll" id="spo2PickerScroll">
+                            <!-- JavaScriptで動的生成 -->
+                        </div>
+                    </div>
+                </div>
+                
                 <p class="modal-note" id="modalNote"></p>
             </div>
             <footer class="modal-footer">

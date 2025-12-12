@@ -622,6 +622,104 @@ button:disabled {
     color: #6b7280;
 }
 
+.metric-input-default.hidden {
+    display: none;
+}
+
+/* SpO2スクロールピッカー */
+.spo2-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.spo2-selected-value {
+    text-align: center;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--color-blue) 0%, #3b82f6 100%);
+    border-radius: 16px;
+    color: white;
+}
+
+.spo2-selected-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-bottom: 6px;
+}
+
+.spo2-selected-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+}
+
+#spo2DisplayValue {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.spo2-unit {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+.spo2-picker-wrapper {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    background: #f9fafb;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+}
+
+.spo2-picker-highlight {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 50px;
+    transform: translateY(-50%);
+    background: rgba(29, 78, 216, 0.08);
+    border-top: 2px solid var(--color-blue);
+    border-bottom: 2px solid var(--color-blue);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.spo2-picker-scroll {
+    height: 100%;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 85px 0;
+}
+
+.spo2-picker-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.spo2-picker-item {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #d1d5db;
+    scroll-snap-align: center;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.spo2-picker-item.active {
+    color: var(--color-blue);
+    font-size: 2.4rem;
+    transform: scale(1.1);
+}
+
 .modal-footer {
     display: flex;
     justify-content: space-between;

@@ -129,6 +129,11 @@
     const modalNote = document.getElementById("modalNote");
     const cancelInputBtn = document.getElementById("cancelInputBtn");
     const saveEntryBtn = document.getElementById("saveEntryBtn");
+    
+    // SpO2スクロールピッカー関連
+    const spo2PickerContainer = document.getElementById("spo2PickerContainer");
+    const spo2PickerScroll = document.getElementById("spo2PickerScroll");
+    const spo2DisplayValue = document.getElementById("spo2DisplayValue");
 
     const recordModal = document.getElementById("recordModal");
     const recordTableBody = document.getElementById("recordTableBody");
@@ -274,23 +279,33 @@
         }
         
         modalTitle.textContent = config.label;
-        metricInput.type = "number";
-        metricInput.min = String(config.min);
-        metricInput.max = String(config.max);
-        metricInput.step = config.step !== undefined ? String(config.step) : (config.allowDecimal ? "0.1" : "1");
-        // スマホでスピナーを表示するためにinputmode属性を設定
-        if (metricKey === "spo2") {
-            metricInput.setAttribute("inputmode", "numeric");
-        } else {
-            metricInput.setAttribute("inputmode", config.allowDecimal ? "decimal" : "numeric");
-        }
-        metricInput.setAttribute("aria-label", `${config.label}の入力`);
-        metricInput.setAttribute("pattern", config.allowDecimal ? "[0-9]+(\\\\.[0-9]+)?" : "[0-9]*");
         
-        // 値を先に設定（スマホでスピナーを表示するために重要）
-        metricInput.value = defaultValue !== null
-            ? (config.decimals > 0 ? defaultValue.toFixed(config.decimals).replace(/\.0+$/, "") : String(defaultValue))
-            : "";
+        // SpO2の場合はスクロールピッカーを表示、その他は数値入力
+        if (metricKey === "spo2") {
+            // スクロールピッカーを表示
+            spo2PickerContainer.classList.remove("hidden");
+            metricInput.classList.add("hidden");
+            
+            // スクロールピッカーを初期化
+            initSpo2Picker(defaultValue || 95);
+        } else {
+            // 数値入力フィールドを表示
+            spo2PickerContainer.classList.add("hidden");
+            metricInput.classList.remove("hidden");
+            
+            metricInput.type = "number";
+            metricInput.min = String(config.min);
+            metricInput.max = String(config.max);
+            metricInput.step = config.step !== undefined ? String(config.step) : (config.allowDecimal ? "0.1" : "1");
+            metricInput.setAttribute("inputmode", config.allowDecimal ? "decimal" : "numeric");
+            metricInput.setAttribute("aria-label", `${config.label}の入力`);
+            metricInput.setAttribute("pattern", config.allowDecimal ? "[0-9]+(\\\\.[0-9]+)?" : "[0-9]*");
+            
+            // 値を先に設定
+            metricInput.value = defaultValue !== null
+                ? (config.decimals > 0 ? defaultValue.toFixed(config.decimals).replace(/\.0+$/, "") : String(defaultValue))
+                : "";
+        }
 
         if (!state.timer.started) {
             modalNote.textContent = "開始前の基準値として保存されます。";
@@ -302,14 +317,12 @@
         modal.classList.remove("hidden");
         syncModalOpenState();
         
-        // スマホでスピナーを表示するために、少し遅延してからフォーカス
-        setTimeout(() => {
-            metricInput.focus({ preventScroll: true });
-            // 値が設定されている場合は選択しない（スピナーを表示するため）
-            if (metricInput.value === "" && defaultValue === null) {
-                // 値がない場合のみ選択
-            }
-        }, 100);
+        // 数値入力の場合のみフォーカス
+        if (metricKey !== "spo2") {
+            setTimeout(() => {
+                metricInput.focus({ preventScroll: true });
+            }, 100);
+        }
     }
 
     function closeModal() {
@@ -318,17 +331,120 @@
         syncModalOpenState();
     }
 
+    // SpO2スクロールピッカーの初期化
+    function initSpo2Picker(defaultValue = 95) {
+        const MIN_VALUE = 85;
+        const MAX_VALUE = 100;
+        const ITEM_HEIGHT = 50;
+        
+        // 既存のアイテムをクリア
+        spo2PickerScroll.innerHTML = "";
+        
+        // ピッカーアイテムを生成
+        for (let i = MIN_VALUE; i <= MAX_VALUE; i++) {
+            const item = document.createElement("div");
+            item.className = "spo2-picker-item";
+            item.textContent = i;
+            item.dataset.value = i;
+            spo2PickerScroll.appendChild(item);
+        }
+        
+        // デフォルト値にスクロール
+        setTimeout(() => {
+            scrollSpo2ToValue(defaultValue, false);
+            updateSpo2Selection();
+        }, 100);
+        
+        // スクロールイベントリスナーを設定（既存のものを削除してから追加）
+        spo2PickerScroll.removeEventListener("scroll", handleSpo2Scroll);
+        spo2PickerScroll.addEventListener("scroll", handleSpo2Scroll);
+    }
+
+    // SpO2スクロールピッカーのスクロール処理
+    let spo2ScrollTimeout;
+    function handleSpo2Scroll() {
+        updateSpo2Selection();
+        
+        clearTimeout(spo2ScrollTimeout);
+        spo2ScrollTimeout = setTimeout(() => {
+            const currentValue = parseInt(spo2DisplayValue.textContent, 10);
+            scrollSpo2ToValue(currentValue, true);
+        }, 150);
+    }
+
+    // SpO2スクロールピッカーの選択更新
+    function updateSpo2Selection() {
+        const MIN_VALUE = 85;
+        const ITEM_HEIGHT = 50;
+        const scrollTop = spo2PickerScroll.scrollTop;
+        const centerPosition = scrollTop + (spo2PickerScroll.clientHeight / 2);
+        
+        const items = spo2PickerScroll.querySelectorAll(".spo2-picker-item");
+        let closestItem = null;
+        let minDistance = Infinity;
+
+        items.forEach(item => {
+            const itemTop = item.offsetTop;
+            const itemCenter = itemTop + (ITEM_HEIGHT / 2);
+            const distance = Math.abs(centerPosition - itemCenter);
+
+            // アイテムのスタイルを更新
+            if (distance < ITEM_HEIGHT) {
+                const scale = 1 - (distance / ITEM_HEIGHT) * 0.5;
+                item.style.opacity = scale;
+                if (distance < ITEM_HEIGHT / 2) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            } else {
+                item.style.opacity = 0.3;
+                item.classList.remove("active");
+            }
+
+            // 最も近いアイテムを記録
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestItem = item;
+            }
+        });
+
+        // 現在の値を更新
+        if (closestItem) {
+            const value = parseInt(closestItem.dataset.value, 10);
+            spo2DisplayValue.textContent = value;
+        }
+    }
+
+    // SpO2スクロールピッカーの値を指定位置にスクロール
+    function scrollSpo2ToValue(value, smooth = true) {
+        const MIN_VALUE = 85;
+        const ITEM_HEIGHT = 50;
+        const index = value - MIN_VALUE;
+        const scrollPosition = index * ITEM_HEIGHT;
+        spo2PickerScroll.scrollTo({
+            top: scrollPosition,
+            behavior: smooth ? "smooth" : "auto"
+        });
+    }
+
     function saveCurrentEntry() {
         if (!activeMetricKey) return;
         const config = METRICS[activeMetricKey];
-        const rawValue = metricInput.value.trim();
-
-        if (rawValue === "") {
-            showToast("値を入力してください。", 2000);
-            return;
+        
+        let parsedValue;
+        
+        // SpO2の場合はスクロールピッカーから値を取得
+        if (activeMetricKey === "spo2") {
+            parsedValue = parseInt(spo2DisplayValue.textContent, 10);
+        } else {
+            const rawValue = metricInput.value.trim();
+            if (rawValue === "") {
+                showToast("値を入力してください。", 2000);
+                return;
+            }
+            parsedValue = config.allowDecimal ? parseFloat(rawValue) : parseInt(rawValue, 10);
         }
-
-        const parsedValue = config.allowDecimal ? parseFloat(rawValue) : parseInt(rawValue, 10);
 
         if (Number.isNaN(parsedValue)) {
             showToast("数値を入力してください。", 2000);
