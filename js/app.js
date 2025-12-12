@@ -89,16 +89,31 @@
         recoveryTime: {
             minutes: null,
             seconds: null
+        },
+        recoveryTimer: {
+            running: false,
+            startTimestamp: null,
+            elapsedMs: 0,
+            intervalId: null
         }
     };
 
     const panelButtons = document.querySelectorAll(".panel");
+    const usageView = document.getElementById("usageView");
+    const mainApp = document.querySelector(".app");
+    const startUsageBtn = document.getElementById("startUsageBtn");
+    const showUsageBtn = document.getElementById("showUsageBtn");
     const measurementView = document.getElementById("measurementView");
     const completionView = document.getElementById("completionView");
     const baselineSpo2ValueEl = document.getElementById("baselineSpo2Value");
     const recoveryMinutesInput = document.getElementById("recoveryMinutes");
     const recoverySecondsInput = document.getElementById("recoverySeconds");
     const saveRecoveryBtn = document.getElementById("saveRecoveryBtn");
+    const startRecoveryBtn = document.getElementById("startRecoveryBtn");
+    const stopRecoveryBtn = document.getElementById("stopRecoveryBtn");
+    const recoveryCountdownSection = document.getElementById("recoveryCountdownSection");
+    const recoveryStartSection = document.getElementById("recoveryStartSection");
+    const recoveryTimerDisplay = document.getElementById("recoveryTimerDisplay");
     const timerDisplayEl = document.getElementById("timerDisplay");
     const inputCueEl = document.getElementById("inputCue");
     const startStopBtn = document.getElementById("startStopBtn");
@@ -140,7 +155,33 @@
         updateInputCue();
     }
 
+    function showMainApp() {
+        if (usageView) {
+            usageView.classList.add("hidden");
+        }
+        if (mainApp) {
+            mainApp.classList.remove("hidden");
+        }
+    }
+
+    function showUsageView() {
+        if (mainApp) {
+            mainApp.classList.add("hidden");
+        }
+        if (usageView) {
+            usageView.classList.remove("hidden");
+        }
+    }
+
     function attachEventListeners() {
+        // 使い方画面の切り替え
+        if (startUsageBtn) {
+            startUsageBtn.addEventListener("click", showMainApp);
+        }
+        if (showUsageBtn) {
+            showUsageBtn.addEventListener("click", showUsageView);
+        }
+
         panelButtons.forEach((button) => {
             button.addEventListener("click", () => {
                 const metricKey = button.dataset.metric;
@@ -153,6 +194,14 @@
         commitBtn.addEventListener("click", handleCommit);
         saveRecoveryBtn.addEventListener("click", saveRecoveryTime);
         showRecordsBtn.addEventListener("click", openRecordModal);
+        
+        // 回復時間カウントダウン
+        if (startRecoveryBtn) {
+            startRecoveryBtn.addEventListener("click", startRecoveryTimer);
+        }
+        if (stopRecoveryBtn) {
+            stopRecoveryBtn.addEventListener("click", stopRecoveryTimer);
+        }
 
         cancelInputBtn.addEventListener("click", closeModal);
         saveEntryBtn.addEventListener("click", saveCurrentEntry);
@@ -629,6 +678,26 @@
         panelButtons.forEach((button) => {
             button.disabled = true;
         });
+        
+        // カウントダウン状態の初期化
+        if (state.recoveryTimer.running) {
+            // カウントダウン実行中の場合
+            if (recoveryStartSection) {
+                recoveryStartSection.classList.add("hidden");
+            }
+            if (recoveryCountdownSection) {
+                recoveryCountdownSection.classList.remove("hidden");
+            }
+        } else {
+            // カウントダウン未開始の場合
+            if (recoveryCountdownSection) {
+                recoveryCountdownSection.classList.add("hidden");
+            }
+            if (recoveryStartSection) {
+                recoveryStartSection.classList.remove("hidden");
+            }
+        }
+        
         updateCompletionView();
         updateRecoverySummary();
         updateInputCue();
@@ -713,6 +782,71 @@
             populateRecordTable();
         }
         showToast("回復時間を保存しました。", 2000);
+    }
+
+    function startRecoveryTimer() {
+        if (state.recoveryTimer.running) return;
+        
+        state.recoveryTimer.running = true;
+        state.recoveryTimer.startTimestamp = Date.now() - state.recoveryTimer.elapsedMs;
+        state.recoveryTimer.intervalId = window.setInterval(updateRecoveryTimer, 100);
+        
+        // UIを切り替え
+        if (recoveryStartSection) {
+            recoveryStartSection.classList.add("hidden");
+        }
+        if (recoveryCountdownSection) {
+            recoveryCountdownSection.classList.remove("hidden");
+        }
+        
+        showToast("回復時間の計測を開始しました。", 2000);
+    }
+
+    function stopRecoveryTimer() {
+        if (!state.recoveryTimer.running) return;
+        
+        state.recoveryTimer.running = false;
+        if (state.recoveryTimer.intervalId) {
+            clearInterval(state.recoveryTimer.intervalId);
+            state.recoveryTimer.intervalId = null;
+        }
+        
+        // 経過時間を分・秒に変換して保存
+        const totalSeconds = Math.floor(state.recoveryTimer.elapsedMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        
+        state.recoveryTime.minutes = minutes;
+        state.recoveryTime.seconds = seconds;
+        recoveryMinutesInput.value = String(minutes);
+        recoverySecondsInput.value = String(seconds);
+        
+        // UIを切り替え
+        if (recoveryCountdownSection) {
+            recoveryCountdownSection.classList.add("hidden");
+        }
+        if (recoveryStartSection) {
+            recoveryStartSection.classList.remove("hidden");
+        }
+        
+        updateRecoverySummary();
+        if (!recordModal.classList.contains("hidden")) {
+            populateRecordTable();
+        }
+        showToast(`回復時間を記録しました: ${minutes}分${String(seconds).padStart(2, "0")}秒`, 3000);
+    }
+
+    function updateRecoveryTimer() {
+        const now = Date.now();
+        state.recoveryTimer.elapsedMs = now - state.recoveryTimer.startTimestamp;
+        
+        const totalSeconds = Math.floor(state.recoveryTimer.elapsedMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        
+        if (recoveryTimerDisplay) {
+            recoveryTimerDisplay.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
     }
 
     function openRecordModal() {
@@ -815,6 +949,26 @@
         state.minuteRecorded.clear();
         state.recoveryTime.minutes = null;
         state.recoveryTime.seconds = null;
+        
+        // 回復時間カウントダウンのリセット
+        if (state.recoveryTimer.intervalId) {
+            clearInterval(state.recoveryTimer.intervalId);
+            state.recoveryTimer.intervalId = null;
+        }
+        state.recoveryTimer.running = false;
+        state.recoveryTimer.startTimestamp = null;
+        state.recoveryTimer.elapsedMs = 0;
+        
+        // UIをリセット
+        if (recoveryCountdownSection) {
+            recoveryCountdownSection.classList.add("hidden");
+        }
+        if (recoveryStartSection) {
+            recoveryStartSection.classList.remove("hidden");
+        }
+        if (recoveryTimerDisplay) {
+            recoveryTimerDisplay.textContent = "00:00";
+        }
 
         Object.keys(state.data).forEach((key) => {
             state.data[key] = MINUTES.map(() => null);
