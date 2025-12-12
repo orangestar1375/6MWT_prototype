@@ -3,49 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>6分間歩行試験 使い方</title>
+    <title>使い方 - 6分間歩行試験</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <main class="usage-page" aria-labelledby="usageTitle">
+        <div class="usage-top-nav">
+            <a class="back-link back-link-top" href="record.html">← 計測画面に戻る</a>
+        </div>
         <header class="usage-header">
             <p class="usage-label">ガイド</p>
-            <h1 id="usageTitle">6分間歩行試験アプリの使い方</h1>
-            <p class="usage-intro">ここでは、病棟で素早く測定できるよう本アプリの基本的な流れをまとめています。施設や運用ルールに合わせて内容を追記・編集してください。</p>
+            <h1 id="usageTitle">使い方</h1>
+            <p class="usage-intro">以下のボタンから、ご覧になりたい情報を選択してください。</p>
         </header>
 
-        <section class="usage-section" aria-labelledby="usageBaseline">
-            <h2 id="usageBaseline">1. 基準値を入力する</h2>
-            <ul>
-                <li>計測開始前に SpO₂・脈拍・歩行距離・Borg の各パネルをタップし、患者さんの基準値を入力します。</li>
-                <li>4 指標すべてが入力されるまで Start ボタンは押せません。</li>
-            </ul>
-        </section>
+        <div class="usage-button-grid">
+            <a href="usage-guide.html" class="usage-button usage-button-app">
+                <div class="usage-button-icon">📱</div>
+                <h2 class="usage-button-title">本ツールの使い方</h2>
+                <p class="usage-button-description">アプリの基本的な操作方法と測定の流れを説明します。</p>
+            </a>
 
-        <section class="usage-section" aria-labelledby="usageDuring">
-            <h2 id="usageDuring">2. 計測中の記録</h2>
-            <ul>
-                <li>Start を押すとタイマーが進み、各 0:55〜1:25 の間に「◯分目の入力」表示が点灯します。</li>
-                <li>この表示中に「決定」を押すと、その分の値として記録されます。同じウィンドウ内であれば上書き可能です。</li>
-                <li>表示がないタイミングで決定を押すと記録は更新されません。</li>
-            </ul>
-        </section>
+            <a href="ats-guide.html" class="usage-button usage-button-ats">
+                <div class="usage-button-icon">📋</div>
+                <h2 class="usage-button-title">6分間歩行試験について</h2>
+                <p class="usage-button-description">ATSガイドライン準拠の6分間歩行試験の標準的実施方法と解釈を説明します。</p>
+            </a>
+        </div>
 
-        <section class="usage-section" aria-labelledby="usageAfter">
-            <h2 id="usageAfter">3. 計測終了後</h2>
-            <ul>
-                <li>6 分経過後は回復時間入力ビューに切り替わります。ベースライン SpO₂ に戻るまでの分・秒を入力して保存します。</li>
-                <li>「記録を表示」から今回の 0〜6 分値と回復時間を表で確認できます。</li>
-                <li>再度測定する場合は Reset ボタンでデータを初期化し、基準値入力からやり直します。</li>
-            </ul>
-        </section>
-
-        <section class="usage-section" aria-labelledby="usageNotes">
-            <h2 id="usageNotes">メモ欄</h2>
-            <p>施設独自の注意点や測定手順を追記するスペースとしてご利用ください。</p>
-        </section>
-
-        <a class="back-link" href="index.html">← 計測画面に戻る</a>
+        <div class="usage-footer">
+            <a class="back-link" href="index.html">← トップに戻る</a>
+        </div>
     </main>
 </body>
 </html>

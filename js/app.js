@@ -2,12 +2,12 @@
     const MINUTES = Array.from({ length: 7 }, (_, minute) => minute); // 0〜6分
 
     const MINUTE_WINDOWS = {
-        1: { start: 55, end: 85 },
-        2: { start: 115, end: 145 },
-        3: { start: 175, end: 205 },
-        4: { start: 235, end: 265 },
-        5: { start: 295, end: 325 },
-        6: { start: 355, end: 385 }
+        1: { start: 50, end: 60 },
+        2: { start: 110, end: 120 },
+        3: { start: 170, end: 180 },
+        4: { start: 230, end: 240 },
+        5: { start: 290, end: 300 },
+        6: { start: 350, end: 360 }
     };
 
     const METRIC_ORDER = ["spo2", "pulse", "distance", "borg"];
@@ -99,10 +99,7 @@
     };
 
     const panelButtons = document.querySelectorAll(".panel");
-    const usageView = document.getElementById("usageView");
     const mainApp = document.querySelector(".app");
-    const startUsageBtn = document.getElementById("startUsageBtn");
-    const showUsageBtn = document.getElementById("showUsageBtn");
     const measurementView = document.getElementById("measurementView");
     const completionView = document.getElementById("completionView");
     const baselineSpo2ValueEl = document.getElementById("baselineSpo2Value");
@@ -160,33 +157,7 @@
         updateInputCue();
     }
 
-    function showMainApp() {
-        if (usageView) {
-            usageView.classList.add("hidden");
-        }
-        if (mainApp) {
-            mainApp.classList.remove("hidden");
-        }
-    }
-
-    function showUsageView() {
-        if (mainApp) {
-            mainApp.classList.add("hidden");
-        }
-        if (usageView) {
-            usageView.classList.remove("hidden");
-        }
-    }
-
     function attachEventListeners() {
-        // 使い方画面の切り替え
-        if (startUsageBtn) {
-            startUsageBtn.addEventListener("click", showMainApp);
-        }
-        if (showUsageBtn) {
-            showUsageBtn.addEventListener("click", showUsageView);
-        }
-
         panelButtons.forEach((button) => {
             button.addEventListener("click", () => {
                 const metricKey = button.dataset.metric;
