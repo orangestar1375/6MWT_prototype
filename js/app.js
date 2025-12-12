@@ -17,7 +17,7 @@
             key: "spo2",
             label: "SpO₂",
             unit: "%",
-            min: 50,
+            min: 70,
             max: 100,
             decimals: 0,
             allowDecimal: false,
@@ -29,8 +29,8 @@
             key: "pulse",
             label: "脈拍",
             unit: "bpm",
-            min: 20,
-            max: 220,
+            min: 50,
+            max: 200,
             decimals: 0,
             allowDecimal: false,
             step: 1,
@@ -55,9 +55,9 @@
             unit: "",
             min: 0,
             max: 10,
-            decimals: 1,
-            allowDecimal: true,
-            step: 0.5,
+            decimals: 0,
+            allowDecimal: false,
+            step: 1,
             requiresBaseline: true,
             toastLabel: "Borg"
         }
@@ -131,6 +131,11 @@
     const spo2PickerContainer = document.getElementById("spo2PickerContainer");
     const spo2PickerScroll = document.getElementById("spo2PickerScroll");
     const spo2DisplayValue = document.getElementById("spo2DisplayValue");
+    
+    // Borgスクロールピッカー関連
+    const borgPickerContainer = document.getElementById("borgPickerContainer");
+    const borgPickerScroll = document.getElementById("borgPickerScroll");
+    const borgDisplayValue = document.getElementById("borgDisplayValue");
 
     const recordModal = document.getElementById("recordModal");
     const recordTableBody = document.getElementById("recordTableBody");
@@ -139,6 +144,11 @@
     const resetDialog = document.getElementById("resetDialog");
     const cancelResetBtn = document.getElementById("cancelResetBtn");
     const confirmResetBtn = document.getElementById("confirmResetBtn");
+
+    const usageWarningDialog = document.getElementById("usageWarningDialog");
+    const cancelUsageBtn = document.getElementById("cancelUsageBtn");
+    const confirmUsageBtn = document.getElementById("confirmUsageBtn");
+    const showUsageBtn = document.getElementById("showUsageBtn");
 
     const minuteBadges = new Map();
 
@@ -168,6 +178,7 @@
         startStopBtn.addEventListener("click", handleStartStopClick);
         resetBtn.addEventListener("click", openResetDialog);
         commitBtn.addEventListener("click", handleCommit);
+        showUsageBtn.addEventListener("click", handleUsageClick);
         saveRecoveryBtn.addEventListener("click", saveRecoveryTime);
         showRecordsBtn.addEventListener("click", openRecordModal);
         
@@ -203,6 +214,18 @@
         cancelResetBtn.addEventListener("click", closeResetDialog);
         confirmResetBtn.addEventListener("click", () => performReset(true));
 
+        usageWarningDialog.addEventListener("click", (event) => {
+            if (event.target.matches("[data-dismiss=usage-warning-dialog]")) {
+                closeUsageWarningDialog();
+            }
+        });
+
+        cancelUsageBtn.addEventListener("click", closeUsageWarningDialog);
+        confirmUsageBtn.addEventListener("click", () => {
+            closeUsageWarningDialog();
+            window.location.href = "usage.html";
+        });
+
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape") {
                 if (!modal.classList.contains("hidden")) {
@@ -211,6 +234,8 @@
                     closeRecordModal();
                 } else if (!resetDialog.classList.contains("hidden")) {
                     closeResetDialog();
+                } else if (!usageWarningDialog.classList.contains("hidden")) {
+                    closeUsageWarningDialog();
                 }
             }
         });
@@ -233,7 +258,7 @@
         const config = METRICS[metricKey];
         const currentValue = state.currentValues[metricKey];
         
-        // SpO2の場合、デフォルト値と前回入力値の処理
+        // SpO2とBorgの場合、デフォルト値と前回入力値の処理
         let defaultValue = null;
         if (metricKey === "spo2") {
             // 前回入力値がある場合はそれを使用、なければデフォルト95
@@ -244,6 +269,15 @@
                 const recordedValue = state.data[metricKey][0];
                 defaultValue = recordedValue !== null ? recordedValue : 95;
             }
+        } else if (metricKey === "borg") {
+            // 前回入力値がある場合はそれを使用、なければデフォルト2
+            if (currentValue !== null) {
+                defaultValue = currentValue;
+            } else {
+                // 既に記録された値がある場合はそれを使用
+                const recordedValue = state.data[metricKey][0];
+                defaultValue = recordedValue !== null ? recordedValue : 2;
+            }
         } else {
             // その他の指標は前回入力値があればそれを使用
             defaultValue = currentValue !== null ? currentValue : null;
@@ -251,17 +285,27 @@
         
         modalTitle.textContent = config.label;
         
-        // SpO2の場合はスクロールピッカーを表示、その他は数値入力
+        // SpO2とBorgの場合はスクロールピッカーを表示、その他は数値入力
         if (metricKey === "spo2") {
-            // スクロールピッカーを表示
+            // SpO2スクロールピッカーを表示
             spo2PickerContainer.classList.remove("hidden");
+            borgPickerContainer.classList.add("hidden");
             metricInput.classList.add("hidden");
             
             // スクロールピッカーを初期化
             initSpo2Picker(defaultValue || 95);
+        } else if (metricKey === "borg") {
+            // Borgスクロールピッカーを表示
+            borgPickerContainer.classList.remove("hidden");
+            spo2PickerContainer.classList.add("hidden");
+            metricInput.classList.add("hidden");
+            
+            // スクロールピッカーを初期化
+            initBorgPicker(defaultValue || 2);
         } else {
             // 数値入力フィールドを表示
             spo2PickerContainer.classList.add("hidden");
+            borgPickerContainer.classList.add("hidden");
             metricInput.classList.remove("hidden");
             
             metricInput.type = "number";
@@ -304,7 +348,7 @@
 
     // SpO2スクロールピッカーの初期化
     function initSpo2Picker(defaultValue = 95) {
-        const MIN_VALUE = 85;
+        const MIN_VALUE = 70;
         const MAX_VALUE = 100;
         const ITEM_HEIGHT = 50;
         
@@ -345,7 +389,7 @@
 
     // SpO2スクロールピッカーの選択更新
     function updateSpo2Selection() {
-        const MIN_VALUE = 85;
+        const MIN_VALUE = 70;
         const ITEM_HEIGHT = 50;
         const scrollTop = spo2PickerScroll.scrollTop;
         const centerPosition = scrollTop + (spo2PickerScroll.clientHeight / 2);
@@ -389,11 +433,108 @@
 
     // SpO2スクロールピッカーの値を指定位置にスクロール
     function scrollSpo2ToValue(value, smooth = true) {
-        const MIN_VALUE = 85;
+        const MIN_VALUE = 70;
         const ITEM_HEIGHT = 50;
         const index = value - MIN_VALUE;
         const scrollPosition = index * ITEM_HEIGHT;
         spo2PickerScroll.scrollTo({
+            top: scrollPosition,
+            behavior: smooth ? "smooth" : "auto"
+        });
+    }
+
+    // Borgスクロールピッカーの初期化
+    function initBorgPicker(defaultValue = 2) {
+        const MIN_VALUE = 0;
+        const MAX_VALUE = 10;
+        const ITEM_HEIGHT = 50;
+        
+        // 既存のアイテムをクリア
+        borgPickerScroll.innerHTML = "";
+        
+        // ピッカーアイテムを生成（0から10まで整数）
+        for (let i = MIN_VALUE; i <= MAX_VALUE; i++) {
+            const item = document.createElement("div");
+            item.className = "spo2-picker-item";
+            item.textContent = i;
+            item.dataset.value = i;
+            borgPickerScroll.appendChild(item);
+        }
+        
+        // デフォルト値にスクロール
+        setTimeout(() => {
+            scrollBorgToValue(defaultValue, false);
+            updateBorgSelection();
+        }, 100);
+        
+        // スクロールイベントリスナーを設定（既存のものを削除してから追加）
+        borgPickerScroll.removeEventListener("scroll", handleBorgScroll);
+        borgPickerScroll.addEventListener("scroll", handleBorgScroll);
+    }
+
+    // Borgスクロールピッカーのスクロール処理
+    let borgScrollTimeout;
+    function handleBorgScroll() {
+        updateBorgSelection();
+        
+        clearTimeout(borgScrollTimeout);
+        borgScrollTimeout = setTimeout(() => {
+            const currentValue = parseFloat(borgDisplayValue.textContent);
+            scrollBorgToValue(currentValue, true);
+        }, 150);
+    }
+
+    // Borgスクロールピッカーの選択更新
+    function updateBorgSelection() {
+        const MIN_VALUE = 0;
+        const ITEM_HEIGHT = 50;
+        const scrollTop = borgPickerScroll.scrollTop;
+        const centerPosition = scrollTop + (borgPickerScroll.clientHeight / 2);
+        
+        const items = borgPickerScroll.querySelectorAll(".spo2-picker-item");
+        let closestItem = null;
+        let minDistance = Infinity;
+
+        items.forEach(item => {
+            const itemTop = item.offsetTop;
+            const itemCenter = itemTop + (ITEM_HEIGHT / 2);
+            const distance = Math.abs(centerPosition - itemCenter);
+
+            // アイテムのスタイルを更新
+            if (distance < ITEM_HEIGHT) {
+                const scale = 1 - (distance / ITEM_HEIGHT) * 0.5;
+                item.style.opacity = scale;
+                if (distance < ITEM_HEIGHT / 2) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            } else {
+                item.style.opacity = 0.3;
+                item.classList.remove("active");
+            }
+
+            // 最も近いアイテムを記録
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestItem = item;
+            }
+        });
+
+        // 現在の値を更新
+        if (closestItem) {
+            const value = parseInt(closestItem.dataset.value, 10);
+            borgDisplayValue.textContent = value;
+        }
+    }
+
+    // Borgスクロールピッカーの値を指定位置にスクロール
+    function scrollBorgToValue(value, smooth = true) {
+        const MIN_VALUE = 0;
+        const ITEM_HEIGHT = 50;
+        const index = Math.round(value - MIN_VALUE);
+        const scrollPosition = index * ITEM_HEIGHT;
+        borgPickerScroll.scrollTo({
             top: scrollPosition,
             behavior: smooth ? "smooth" : "auto"
         });
@@ -405,9 +546,11 @@
         
         let parsedValue;
         
-        // SpO2の場合はスクロールピッカーから値を取得
+        // SpO2とBorgの場合はスクロールピッカーから値を取得
         if (activeMetricKey === "spo2") {
             parsedValue = parseInt(spo2DisplayValue.textContent, 10);
+        } else if (activeMetricKey === "borg") {
+            parsedValue = parseInt(borgDisplayValue.textContent, 10);
         } else {
             const rawValue = metricInput.value.trim();
             if (rawValue === "") {
@@ -1004,11 +1147,32 @@
     }
 
     function syncModalOpenState() {
-        if (!modal.classList.contains("hidden") || !recordModal.classList.contains("hidden")) {
+        if (!modal.classList.contains("hidden") || !recordModal.classList.contains("hidden") || 
+            !resetDialog.classList.contains("hidden") || !usageWarningDialog.classList.contains("hidden")) {
             document.body.classList.add("modal-open");
         } else {
             document.body.classList.remove("modal-open");
         }
+    }
+
+    function handleUsageClick() {
+        // 計測が開始されている場合のみ警告を表示
+        if (state.timer.started) {
+            openUsageWarningDialog();
+        } else {
+            // 計測が開始されていない場合は直接遷移
+            window.location.href = "usage.html";
+        }
+    }
+
+    function openUsageWarningDialog() {
+        usageWarningDialog.classList.remove("hidden");
+        document.body.classList.add("dialog-open");
+    }
+
+    function closeUsageWarningDialog() {
+        usageWarningDialog.classList.add("hidden");
+        document.body.classList.remove("dialog-open");
     }
 
     function openResetDialog() {

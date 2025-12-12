@@ -78,7 +78,7 @@
             <div class="control-buttons" role="group" aria-label="計測操作ボタン">
                 <div class="button-column">
                     <button id="resetBtn" class="reset-btn" type="button" disabled>Reset</button>
-                    <a href="usage.html" class="help-btn" type="button">使い方</a>
+                    <button id="showUsageBtn" class="help-btn" type="button">使い方</button>
                 </div>
                 <button id="startStopBtn" class="start-btn" type="button" disabled>Start</button>
                 <button id="commitBtn" class="commit-btn" type="button" disabled>決定</button>
@@ -112,6 +112,22 @@
                     <div class="spo2-picker-wrapper">
                         <div class="spo2-picker-highlight"></div>
                         <div class="spo2-picker-scroll" id="spo2PickerScroll">
+                            <!-- JavaScriptで動的生成 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Borg用スクロールピッカー -->
+                <div id="borgPickerContainer" class="spo2-picker-container hidden">
+                    <div class="spo2-selected-value">
+                        <div class="spo2-selected-label">選択中の値</div>
+                        <div class="spo2-selected-display">
+                            <span id="borgDisplayValue">2</span>
+                        </div>
+                    </div>
+                    <div class="spo2-picker-wrapper">
+                        <div class="spo2-picker-highlight"></div>
+                        <div class="spo2-picker-scroll" id="borgPickerScroll">
                             <!-- JavaScriptで動的生成 -->
                         </div>
                     </div>
@@ -159,6 +175,18 @@
             <div class="dialog-actions">
                 <button id="cancelResetBtn" type="button">キャンセル</button>
                 <button id="confirmResetBtn" type="button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog hidden" id="usageWarningDialog" role="dialog" aria-modal="true" aria-labelledby="usageWarningDialogTitle">
+        <div class="dialog-backdrop" data-dismiss="usage-warning-dialog"></div>
+        <div class="dialog-content">
+            <h2 id="usageWarningDialogTitle">注意</h2>
+            <p>計測中に計測画面から離れると<br>データがリセットされます</p>
+            <div class="dialog-actions">
+                <button id="cancelUsageBtn" type="button">計測画面に戻る</button>
+                <button id="confirmUsageBtn" type="button">OK</button>
             </div>
         </div>
     </div>

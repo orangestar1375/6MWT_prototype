@@ -35,5 +35,17 @@
             <a class="back-link" href="index.html">← トップに戻る</a>
         </div>
     </main>
+    <script>
+        // record.htmlから来た場合はセッションストレージに記録
+        (function() {
+            const referrer = document.referrer;
+            if (referrer && referrer.includes('record.html')) {
+                sessionStorage.setItem('fromRecord', 'true');
+            } else if (referrer && referrer.includes('index.html')) {
+                // index.htmlから来た場合は記録をクリア
+                sessionStorage.removeItem('fromRecord');
+            }
+        })();
+    </script>
 </body>
 </html>

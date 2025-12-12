@@ -8,6 +8,9 @@
 </head>
 <body>
     <main class="usage-page" aria-labelledby="usageTitle">
+        <div id="topNav" class="usage-top-nav hidden">
+            <a class="back-link back-link-top" href="record.html">← 計測画面に戻る</a>
+        </div>
         <header class="usage-header">
             <p class="usage-label">ガイド</p>
             <h1 id="usageTitle">本ツールの使い方</h1>
@@ -42,14 +45,26 @@
 
         <section class="usage-section" aria-labelledby="usageNotes">
             <h2 id="usageNotes">メモ欄</h2>
+            <p><strong>順天堂大学呼吸器内科の様式に準拠して6分間歩行中、1分ごとに数値を記録し、かつ終了後ベースラインSpO2回復までの所要時間も計測する仕様になっております。</strong></p>
             <p>施設独自の注意点や測定手順を追記するスペースとしてご利用ください。</p>
         </section>
 
         <div class="usage-footer">
-            <a class="back-link" href="usage.html">← 戻る</a>
-            <a class="back-link" href="index.html">トップに戻る →</a>
+            <a class="back-link" href="index.html">トップに戻る</a>
         </div>
     </main>
+    <script>
+        // record.htmlから来た場合（直接またはusage.html経由）は一番上に「計測画面に戻る」ボタンを表示
+        (function() {
+            const referrer = document.referrer;
+            const topNav = document.getElementById('topNav');
+            const fromRecord = sessionStorage.getItem('fromRecord') === 'true';
+            
+            if ((referrer && referrer.includes('record.html')) || fromRecord) {
+                topNav.classList.remove('hidden');
+            }
+        })();
+    </script>
 </body>
 </html>
 

@@ -8,6 +8,9 @@
 </head>
 <body>
     <main class="usage-page" aria-labelledby="atsTitle">
+        <div id="topNav" class="usage-top-nav hidden">
+            <a class="back-link back-link-top" href="record.html">← 計測画面に戻る</a>
+        </div>
         <header class="usage-header">
             <p class="usage-label">ガイドライン</p>
             <h1 id="atsTitle">6分間歩行試験について</h1>
@@ -192,10 +195,21 @@
         </section>
 
         <div class="usage-footer">
-            <a class="back-link" href="usage.html">← 戻る</a>
             <a class="back-link" href="index.html">トップに戻る</a>
         </div>
     </main>
+    <script>
+        // record.htmlから来た場合（直接またはusage.html経由）は一番上に「計測画面に戻る」ボタンを表示
+        (function() {
+            const referrer = document.referrer;
+            const topNav = document.getElementById('topNav');
+            const fromRecord = sessionStorage.getItem('fromRecord') === 'true';
+            
+            if ((referrer && referrer.includes('record.html')) || fromRecord) {
+                topNav.classList.remove('hidden');
+            }
+        })();
+    </script>
 </body>
 </html>
 
