@@ -672,6 +672,7 @@ button:disabled {
     background: #f9fafb;
     border-radius: 16px;
     border: 1px solid var(--color-border);
+    touch-action: pan-y;
 }
 
 .spo2-picker-highlight {
@@ -695,6 +696,7 @@ button:disabled {
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding: 85px 0;
+    touch-action: pan-y;
 }
 
 .spo2-picker-scroll::-webkit-scrollbar {
