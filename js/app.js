@@ -229,9 +229,16 @@
         metricInput.min = String(config.min);
         metricInput.max = String(config.max);
         metricInput.step = config.step !== undefined ? String(config.step) : (config.allowDecimal ? "0.1" : "1");
-        metricInput.inputMode = config.allowDecimal ? "decimal" : "numeric";
+        // スマホでスピナーを表示するためにinputmode属性を設定
+        if (metricKey === "spo2") {
+            metricInput.setAttribute("inputmode", "numeric");
+        } else {
+            metricInput.setAttribute("inputmode", config.allowDecimal ? "decimal" : "numeric");
+        }
         metricInput.setAttribute("aria-label", `${config.label}の入力`);
         metricInput.setAttribute("pattern", config.allowDecimal ? "[0-9]+(\\\\.[0-9]+)?" : "[0-9]*");
+        
+        // 値を先に設定（スマホでスピナーを表示するために重要）
         metricInput.value = defaultValue !== null
             ? (config.decimals > 0 ? defaultValue.toFixed(config.decimals).replace(/\.0+$/, "") : String(defaultValue))
             : "";
@@ -242,18 +249,18 @@
             modalNote.textContent = "現在の測定値を更新します。記録は決定ボタンで行います。";
         }
 
+        // モーダルを表示する前に値を設定済みにする
         modal.classList.remove("hidden");
-        metricInput.focus({ preventScroll: true });
-        if (metricInput.value !== "") {
-            metricInput.select();
-        }
         syncModalOpenState();
+        
+        // スマホでスピナーを表示するために、少し遅延してからフォーカス
         setTimeout(() => {
             metricInput.focus({ preventScroll: true });
-            if (metricInput.value !== "") {
-                metricInput.select();
+            // 値が設定されている場合は選択しない（スピナーを表示するため）
+            if (metricInput.value === "" && defaultValue === null) {
+                // 値がない場合のみ選択
             }
-        }, 50);
+        }, 100);
     }
 
     function closeModal() {
