@@ -207,6 +207,23 @@
         activeMetricKey = metricKey;
         const config = METRICS[metricKey];
         const currentValue = state.currentValues[metricKey];
+        
+        // SpO2の場合、デフォルト値と前回入力値の処理
+        let defaultValue = null;
+        if (metricKey === "spo2") {
+            // 前回入力値がある場合はそれを使用、なければデフォルト95
+            if (currentValue !== null) {
+                defaultValue = currentValue;
+            } else {
+                // 既に記録された値がある場合はそれを使用
+                const recordedValue = state.data[metricKey][0];
+                defaultValue = recordedValue !== null ? recordedValue : 95;
+            }
+        } else {
+            // その他の指標は前回入力値があればそれを使用
+            defaultValue = currentValue !== null ? currentValue : null;
+        }
+        
         modalTitle.textContent = config.label;
         metricInput.type = "number";
         metricInput.min = String(config.min);
@@ -215,8 +232,8 @@
         metricInput.inputMode = config.allowDecimal ? "decimal" : "numeric";
         metricInput.setAttribute("aria-label", `${config.label}の入力`);
         metricInput.setAttribute("pattern", config.allowDecimal ? "[0-9]+(\\\\.[0-9]+)?" : "[0-9]*");
-        metricInput.value = currentValue !== null
-            ? (config.decimals > 0 ? currentValue.toFixed(config.decimals).replace(/\.0+$/, "") : String(currentValue))
+        metricInput.value = defaultValue !== null
+            ? (config.decimals > 0 ? defaultValue.toFixed(config.decimals).replace(/\.0+$/, "") : String(defaultValue))
             : "";
 
         if (!state.timer.started) {
@@ -534,7 +551,11 @@
         startStopBtn.classList.remove("paused", "running");
 
         if (!state.timer.started) {
-            startStopBtn.textContent = "Start";
+            if (baselineReady) {
+                startStopBtn.textContent = "Start";
+            } else {
+                startStopBtn.textContent = "開始時数値を入力";
+            }
             startStopBtn.disabled = !baselineReady;
             if (startStopBtn.disabled) {
                 startStopBtn.classList.add("paused");
