@@ -43,9 +43,9 @@
             unit: "m",
             min: 0,
             max: 2000,
-            decimals: 1,
-            allowDecimal: true,
-            step: 0.5,
+            decimals: 0,
+            allowDecimal: false,
+            step: 1,
             requiresBaseline: true,
             toastLabel: "歩行距離"
         },
@@ -540,35 +540,81 @@
     }
 
     // Distanceスクロールピッカーの初期化
+    // 距離ピッカーは直近値 ±100m の200m幅で開始し、端に近づいたら最大500mまで拡張
+    const DIST_WINDOW = 200; // m（初期表示ウィンドウ幅）
+    const DIST_MAX_RANGE = 500; // m（拡張上限）
+    let distanceLoadedStart = METRICS.distance.min;
+    let distanceLoadedEnd = METRICS.distance.min;
+    
     function initDistancePicker(defaultValue = 0) {
         const MIN_VALUE = METRICS.distance.min;
-        const MAX_VALUE = METRICS.distance.max;
-        const STEP = METRICS.distance.step || 0.5;
-        const ITEM_HEIGHT = 50;
+        const MAX_VALUE = Math.min(METRICS.distance.max, DIST_MAX_RANGE);
+        const half = DIST_WINDOW / 2;
+        distanceLoadedStart = clamp(defaultValue - half, MIN_VALUE, MAX_VALUE);
+        distanceLoadedEnd = clamp(defaultValue + half, MIN_VALUE, MAX_VALUE);
         
-        distancePickerScroll.innerHTML = "";
-        const totalItems = Math.floor((MAX_VALUE - MIN_VALUE) / STEP);
-        for (let i = 0; i <= totalItems; i += 1) {
-            const value = Number((MIN_VALUE + i * STEP).toFixed(1));
-            const item = document.createElement("div");
-            item.className = "spo2-picker-item";
-            item.textContent = value % 1 === 0 ? String(value) : value.toFixed(1);
-            item.dataset.value = value;
-            distancePickerScroll.appendChild(item);
-        }
+        renderDistanceItems(distanceLoadedStart, distanceLoadedEnd);
         
         setTimeout(() => {
             scrollDistanceToValue(defaultValue, false);
             updateDistanceSelection();
-        }, 100);
+        }, 80);
         
         distancePickerScroll.removeEventListener("scroll", handleDistanceScroll);
         distancePickerScroll.addEventListener("scroll", handleDistanceScroll);
     }
     
+    function renderDistanceItems(start, end) {
+        const STEP = METRICS.distance.step || 1;
+        distancePickerScroll.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        for (let value = start; value <= end + 1e-9; value += STEP) {
+            const rounded = Number(value.toFixed(METRICS.distance.decimals || 0));
+            const item = document.createElement("div");
+            item.className = "spo2-picker-item";
+            item.textContent = METRICS.distance.decimals > 0
+                ? rounded.toFixed(METRICS.distance.decimals).replace(/\.0+$/, "")
+                : String(Math.round(rounded));
+            item.dataset.value = rounded;
+            fragment.appendChild(item);
+        }
+        distancePickerScroll.appendChild(fragment);
+    }
+    
+    function maybeExpandDistanceRange() {
+        const MIN_VALUE = METRICS.distance.min;
+        const MAX_VALUE = Math.min(METRICS.distance.max, DIST_MAX_RANGE);
+        const STEP = METRICS.distance.step || 1;
+        const nearTop = distancePickerScroll.scrollTop < 60 && distanceLoadedStart > MIN_VALUE;
+        const nearBottom = (distancePickerScroll.scrollTop + distancePickerScroll.clientHeight) > (distancePickerScroll.scrollHeight - 60) && distanceLoadedEnd < MAX_VALUE;
+        if (!nearTop && !nearBottom) return;
+        
+        const currentValue = parseFloat(distanceDisplayValue.textContent);
+        let updated = false;
+        
+        if (nearTop && distanceLoadedStart > MIN_VALUE) {
+            const newStart = clamp(distanceLoadedStart - DIST_WINDOW, MIN_VALUE, MAX_VALUE);
+            distanceLoadedStart = newStart;
+            updated = true;
+        }
+        if (nearBottom && distanceLoadedEnd < MAX_VALUE) {
+            const newEnd = clamp(distanceLoadedEnd + DIST_WINDOW, MIN_VALUE, MAX_VALUE);
+            distanceLoadedEnd = newEnd;
+            updated = true;
+        }
+        
+        if (updated) {
+            renderDistanceItems(distanceLoadedStart, distanceLoadedEnd);
+            // 再描画後に現在値へスクロールし直す
+            scrollDistanceToValue(currentValue, false);
+            updateDistanceSelection();
+        }
+    }
+    
     let distanceScrollTimeout;
     function handleDistanceScroll() {
         updateDistanceSelection();
+        maybeExpandDistanceRange();
         clearTimeout(distanceScrollTimeout);
         distanceScrollTimeout = setTimeout(() => {
             const currentValue = parseFloat(distanceDisplayValue.textContent);
@@ -617,11 +663,11 @@
     }
     
     function scrollDistanceToValue(value, smooth = true) {
-        const MIN_VALUE = METRICS.distance.min;
-        const MAX_VALUE = METRICS.distance.max;
-        const STEP = METRICS.distance.step || 0.5;
+        const MIN_VALUE = distanceLoadedStart;
+        const MAX_VALUE = distanceLoadedEnd;
+        const STEP = METRICS.distance.step || 1;
         const ITEM_HEIGHT = 50;
-        const clamped = Math.min(MAX_VALUE, Math.max(MIN_VALUE, value));
+        const clamped = clamp(value, MIN_VALUE, MAX_VALUE);
         const index = Math.round((clamped - MIN_VALUE) / STEP);
         const scrollPosition = index * ITEM_HEIGHT;
         distancePickerScroll.scrollTo({
@@ -1081,6 +1127,10 @@
             }
         }
         return null;
+    }
+
+    function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
     }
 
     function getDefaultMetricValue(metricKey) {
