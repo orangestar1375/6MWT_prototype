@@ -117,6 +117,40 @@
                     </div>
                 </div>
                 
+                <!-- Pulse用スクロールピッカー -->
+                <div id="pulsePickerContainer" class="spo2-picker-container hidden">
+                    <div class="spo2-selected-value">
+                        <div class="spo2-selected-label">選択中の値</div>
+                        <div class="spo2-selected-display">
+                            <span id="pulseDisplayValue">100</span>
+                            <span class="spo2-unit">bpm</span>
+                        </div>
+                    </div>
+                    <div class="spo2-picker-wrapper">
+                        <div class="spo2-picker-highlight"></div>
+                        <div class="spo2-picker-scroll" id="pulsePickerScroll">
+                            <!-- JavaScriptで動的生成 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Distance用スクロールピッカー -->
+                <div id="distancePickerContainer" class="spo2-picker-container hidden">
+                    <div class="spo2-selected-value">
+                        <div class="spo2-selected-label">選択中の値</div>
+                        <div class="spo2-selected-display">
+                            <span id="distanceDisplayValue">0</span>
+                            <span class="spo2-unit">m</span>
+                        </div>
+                    </div>
+                    <div class="spo2-picker-wrapper">
+                        <div class="spo2-picker-highlight"></div>
+                        <div class="spo2-picker-scroll" id="distancePickerScroll">
+                            <!-- JavaScriptで動的生成 -->
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Borg用スクロールピッカー -->
                 <div id="borgPickerContainer" class="spo2-picker-container hidden">
                     <div class="spo2-selected-value">

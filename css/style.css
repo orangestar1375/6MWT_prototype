@@ -722,6 +722,34 @@ button:disabled {
     transform: scale(1.1);
 }
 
+.pulse-picker-container .spo2-selected-value {
+    background: linear-gradient(135deg, var(--color-red) 0%, #ef4444 100%);
+}
+
+.pulse-picker-container .spo2-picker-highlight {
+    background: rgba(220, 38, 38, 0.08);
+    border-top: 2px solid var(--color-red);
+    border-bottom: 2px solid var(--color-red);
+}
+
+.pulse-picker-container .spo2-picker-item.active {
+    color: var(--color-red);
+}
+
+.distance-picker-container .spo2-selected-value {
+    background: linear-gradient(135deg, var(--color-green) 0%, #22c55e 100%);
+}
+
+.distance-picker-container .spo2-picker-highlight {
+    background: rgba(5, 150, 105, 0.08);
+    border-top: 2px solid var(--color-green);
+    border-bottom: 2px solid var(--color-green);
+}
+
+.distance-picker-container .spo2-picker-item.active {
+    color: var(--color-green);
+}
+
 .modal-footer {
     display: flex;
     justify-content: space-between;

@@ -132,6 +132,16 @@
     const spo2PickerScroll = document.getElementById("spo2PickerScroll");
     const spo2DisplayValue = document.getElementById("spo2DisplayValue");
     
+    // Pulseスクロールピッカー関連
+    const pulsePickerContainer = document.getElementById("pulsePickerContainer");
+    const pulsePickerScroll = document.getElementById("pulsePickerScroll");
+    const pulseDisplayValue = document.getElementById("pulseDisplayValue");
+    
+    // Distanceスクロールピッカー関連
+    const distancePickerContainer = document.getElementById("distancePickerContainer");
+    const distancePickerScroll = document.getElementById("distancePickerScroll");
+    const distanceDisplayValue = document.getElementById("distanceDisplayValue");
+    
     // Borgスクロールピッカー関連
     const borgPickerContainer = document.getElementById("borgPickerContainer");
     const borgPickerScroll = document.getElementById("borgPickerScroll");
@@ -256,32 +266,7 @@
     function openModal(metricKey) {
         activeMetricKey = metricKey;
         const config = METRICS[metricKey];
-        const currentValue = state.currentValues[metricKey];
-        
-        // SpO2とBorgの場合、デフォルト値と前回入力値の処理
-        let defaultValue = null;
-        if (metricKey === "spo2") {
-            // 前回入力値がある場合はそれを使用、なければデフォルト95
-            if (currentValue !== null) {
-                defaultValue = currentValue;
-            } else {
-                // 既に記録された値がある場合はそれを使用
-                const recordedValue = state.data[metricKey][0];
-                defaultValue = recordedValue !== null ? recordedValue : 95;
-            }
-        } else if (metricKey === "borg") {
-            // 前回入力値がある場合はそれを使用、なければデフォルト2
-            if (currentValue !== null) {
-                defaultValue = currentValue;
-            } else {
-                // 既に記録された値がある場合はそれを使用
-                const recordedValue = state.data[metricKey][0];
-                defaultValue = recordedValue !== null ? recordedValue : 2;
-            }
-        } else {
-            // その他の指標は前回入力値があればそれを使用
-            defaultValue = currentValue !== null ? currentValue : null;
-        }
+        const defaultValue = getDefaultMetricValue(metricKey);
         
         modalTitle.textContent = config.label;
         
@@ -289,23 +274,45 @@
         if (metricKey === "spo2") {
             // SpO2スクロールピッカーを表示
             spo2PickerContainer.classList.remove("hidden");
+            pulsePickerContainer.classList.add("hidden");
+            distancePickerContainer.classList.add("hidden");
             borgPickerContainer.classList.add("hidden");
             metricInput.classList.add("hidden");
             
             // スクロールピッカーを初期化
-            initSpo2Picker(defaultValue || 95);
+            initSpo2Picker(defaultValue ?? 95);
         } else if (metricKey === "borg") {
             // Borgスクロールピッカーを表示
             borgPickerContainer.classList.remove("hidden");
+            pulsePickerContainer.classList.add("hidden");
+            distancePickerContainer.classList.add("hidden");
             spo2PickerContainer.classList.add("hidden");
             metricInput.classList.add("hidden");
             
             // スクロールピッカーを初期化
-            initBorgPicker(defaultValue || 2);
+            initBorgPicker(defaultValue ?? 2);
+        } else if (metricKey === "pulse") {
+            pulsePickerContainer.classList.remove("hidden");
+            spo2PickerContainer.classList.add("hidden");
+            distancePickerContainer.classList.add("hidden");
+            borgPickerContainer.classList.add("hidden");
+            metricInput.classList.add("hidden");
+            
+            initPulsePicker(defaultValue ?? 100);
+        } else if (metricKey === "distance") {
+            distancePickerContainer.classList.remove("hidden");
+            spo2PickerContainer.classList.add("hidden");
+            pulsePickerContainer.classList.add("hidden");
+            borgPickerContainer.classList.add("hidden");
+            metricInput.classList.add("hidden");
+            
+            initDistancePicker(defaultValue ?? 0);
         } else {
             // 数値入力フィールドを表示
             spo2PickerContainer.classList.add("hidden");
             borgPickerContainer.classList.add("hidden");
+            pulsePickerContainer.classList.add("hidden");
+            distancePickerContainer.classList.add("hidden");
             metricInput.classList.remove("hidden");
             
             metricInput.type = "number";
@@ -333,7 +340,7 @@
         syncModalOpenState();
         
         // 数値入力の場合のみフォーカス
-        if (metricKey !== "spo2") {
+        if (metricKey !== "spo2" && metricKey !== "borg" && metricKey !== "pulse" && metricKey !== "distance") {
             setTimeout(() => {
                 metricInput.focus({ preventScroll: true });
             }, 100);
@@ -443,6 +450,186 @@
         });
     }
 
+    // Pulseスクロールピッカーの初期化
+    function initPulsePicker(defaultValue = 100) {
+        const MIN_VALUE = METRICS.pulse.min;
+        const MAX_VALUE = METRICS.pulse.max;
+        const STEP = METRICS.pulse.step || 1;
+        const ITEM_HEIGHT = 50;
+        
+        pulsePickerScroll.innerHTML = "";
+        const totalItems = Math.floor((MAX_VALUE - MIN_VALUE) / STEP);
+        for (let i = 0; i <= totalItems; i += 1) {
+            const value = MIN_VALUE + i * STEP;
+            const item = document.createElement("div");
+            item.className = "spo2-picker-item";
+            item.textContent = value;
+            item.dataset.value = value;
+            pulsePickerScroll.appendChild(item);
+        }
+        
+        setTimeout(() => {
+            scrollPulseToValue(defaultValue, false);
+            updatePulseSelection();
+        }, 100);
+        
+        pulsePickerScroll.removeEventListener("scroll", handlePulseScroll);
+        pulsePickerScroll.addEventListener("scroll", handlePulseScroll);
+    }
+    
+    let pulseScrollTimeout;
+    function handlePulseScroll() {
+        updatePulseSelection();
+        clearTimeout(pulseScrollTimeout);
+        pulseScrollTimeout = setTimeout(() => {
+            const currentValue = parseInt(pulseDisplayValue.textContent, 10);
+            scrollPulseToValue(currentValue, true);
+        }, 150);
+    }
+    
+    function updatePulseSelection() {
+        const ITEM_HEIGHT = 50;
+        const scrollTop = pulsePickerScroll.scrollTop;
+        const centerPosition = scrollTop + (pulsePickerScroll.clientHeight / 2);
+        const items = pulsePickerScroll.querySelectorAll(".spo2-picker-item");
+        let closestItem = null;
+        let minDistance = Infinity;
+        
+        items.forEach(item => {
+            const itemTop = item.offsetTop;
+            const itemCenter = itemTop + (ITEM_HEIGHT / 2);
+            const distance = Math.abs(centerPosition - itemCenter);
+            
+            if (distance < ITEM_HEIGHT) {
+                const scale = 1 - (distance / ITEM_HEIGHT) * 0.5;
+                item.style.opacity = scale;
+                if (distance < ITEM_HEIGHT / 2) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            } else {
+                item.style.opacity = 0.3;
+                item.classList.remove("active");
+            }
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestItem = item;
+            }
+        });
+        
+        if (closestItem) {
+            const value = parseInt(closestItem.dataset.value, 10);
+            pulseDisplayValue.textContent = value;
+        }
+    }
+    
+    function scrollPulseToValue(value, smooth = true) {
+        const MIN_VALUE = METRICS.pulse.min;
+        const MAX_VALUE = METRICS.pulse.max;
+        const STEP = METRICS.pulse.step || 1;
+        const ITEM_HEIGHT = 50;
+        const clamped = Math.min(MAX_VALUE, Math.max(MIN_VALUE, value));
+        const index = Math.round((clamped - MIN_VALUE) / STEP);
+        const scrollPosition = index * ITEM_HEIGHT;
+        pulsePickerScroll.scrollTo({
+            top: scrollPosition,
+            behavior: smooth ? "smooth" : "auto"
+        });
+    }
+
+    // Distanceスクロールピッカーの初期化
+    function initDistancePicker(defaultValue = 0) {
+        const MIN_VALUE = METRICS.distance.min;
+        const MAX_VALUE = METRICS.distance.max;
+        const STEP = METRICS.distance.step || 0.5;
+        const ITEM_HEIGHT = 50;
+        
+        distancePickerScroll.innerHTML = "";
+        const totalItems = Math.floor((MAX_VALUE - MIN_VALUE) / STEP);
+        for (let i = 0; i <= totalItems; i += 1) {
+            const value = Number((MIN_VALUE + i * STEP).toFixed(1));
+            const item = document.createElement("div");
+            item.className = "spo2-picker-item";
+            item.textContent = value % 1 === 0 ? String(value) : value.toFixed(1);
+            item.dataset.value = value;
+            distancePickerScroll.appendChild(item);
+        }
+        
+        setTimeout(() => {
+            scrollDistanceToValue(defaultValue, false);
+            updateDistanceSelection();
+        }, 100);
+        
+        distancePickerScroll.removeEventListener("scroll", handleDistanceScroll);
+        distancePickerScroll.addEventListener("scroll", handleDistanceScroll);
+    }
+    
+    let distanceScrollTimeout;
+    function handleDistanceScroll() {
+        updateDistanceSelection();
+        clearTimeout(distanceScrollTimeout);
+        distanceScrollTimeout = setTimeout(() => {
+            const currentValue = parseFloat(distanceDisplayValue.textContent);
+            scrollDistanceToValue(currentValue, true);
+        }, 150);
+    }
+    
+    function updateDistanceSelection() {
+        const ITEM_HEIGHT = 50;
+        const scrollTop = distancePickerScroll.scrollTop;
+        const centerPosition = scrollTop + (distancePickerScroll.clientHeight / 2);
+        const items = distancePickerScroll.querySelectorAll(".spo2-picker-item");
+        let closestItem = null;
+        let minDistance = Infinity;
+        
+        items.forEach(item => {
+            const itemTop = item.offsetTop;
+            const itemCenter = itemTop + (ITEM_HEIGHT / 2);
+            const distance = Math.abs(centerPosition - itemCenter);
+            
+            if (distance < ITEM_HEIGHT) {
+                const scale = 1 - (distance / ITEM_HEIGHT) * 0.5;
+                item.style.opacity = scale;
+                if (distance < ITEM_HEIGHT / 2) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            } else {
+                item.style.opacity = 0.3;
+                item.classList.remove("active");
+            }
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestItem = item;
+            }
+        });
+        
+        if (closestItem) {
+            const value = parseFloat(closestItem.dataset.value);
+            distanceDisplayValue.textContent = METRICS.distance.decimals > 0
+                ? value.toFixed(METRICS.distance.decimals).replace(/\.0+$/, "")
+                : String(value);
+        }
+    }
+    
+    function scrollDistanceToValue(value, smooth = true) {
+        const MIN_VALUE = METRICS.distance.min;
+        const MAX_VALUE = METRICS.distance.max;
+        const STEP = METRICS.distance.step || 0.5;
+        const ITEM_HEIGHT = 50;
+        const clamped = Math.min(MAX_VALUE, Math.max(MIN_VALUE, value));
+        const index = Math.round((clamped - MIN_VALUE) / STEP);
+        const scrollPosition = index * ITEM_HEIGHT;
+        distancePickerScroll.scrollTo({
+            top: scrollPosition,
+            behavior: smooth ? "smooth" : "auto"
+        });
+    }
+
     // Borgスクロールピッカーの初期化
     function initBorgPicker(defaultValue = 2) {
         const MIN_VALUE = 0;
@@ -546,11 +733,15 @@
         
         let parsedValue;
         
-        // SpO2とBorgの場合はスクロールピッカーから値を取得
+        // スクロールピッカー使用の指標は表示値から取得
         if (activeMetricKey === "spo2") {
             parsedValue = parseInt(spo2DisplayValue.textContent, 10);
         } else if (activeMetricKey === "borg") {
             parsedValue = parseInt(borgDisplayValue.textContent, 10);
+        } else if (activeMetricKey === "pulse") {
+            parsedValue = parseInt(pulseDisplayValue.textContent, 10);
+        } else if (activeMetricKey === "distance") {
+            parsedValue = parseFloat(distanceDisplayValue.textContent);
         } else {
             const rawValue = metricInput.value.trim();
             if (rawValue === "") {
@@ -890,6 +1081,29 @@
             }
         }
         return null;
+    }
+
+    function getDefaultMetricValue(metricKey) {
+        const currentValue = state.currentValues[metricKey];
+        if (currentValue !== null && currentValue !== undefined) {
+            return currentValue;
+        }
+
+        const dataList = state.data[metricKey];
+        if (Array.isArray(dataList)) {
+            const latestMinute = findLatestMinuteWithData(dataList);
+            if (latestMinute !== null && dataList[latestMinute] !== null) {
+                return dataList[latestMinute];
+            }
+        }
+
+        const defaults = {
+            spo2: 95,
+            borg: 2,
+            pulse: 100,
+            distance: 0
+        };
+        return defaults[metricKey] ?? null;
     }
 
     function enterCompletionView() {
