@@ -536,6 +536,38 @@ button:disabled {
     width: min(520px, calc(100% - 32px));
 }
 
+.usage-help-content {
+    width: min(540px, calc(100% - 32px));
+}
+
+.usage-help-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.usage-help-body h3 {
+    margin: 0 0 6px 0;
+    font-size: 1.05rem;
+    color: var(--color-gray);
+}
+
+.usage-help-body ul {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--color-muted);
+    line-height: 1.6;
+}
+
+.usage-help-body li {
+    list-style: disc;
+}
+
 .record-table {
     width: 100%;
     border-collapse: collapse;

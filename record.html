@@ -176,6 +176,44 @@
         </div>
     </div>
 
+    <!-- 使い方モーダル -->
+    <div class="modal hidden" id="usageHelpModal" role="dialog" aria-modal="true" aria-labelledby="usageHelpTitle">
+        <div class="modal-backdrop" data-dismiss="usage-help-modal"></div>
+        <div class="modal-content usage-help-content">
+            <header class="modal-header">
+                <h2 id="usageHelpTitle">使い方（簡易版）</h2>
+                <button class="modal-close" type="button" aria-label="閉じる" data-dismiss="usage-help-modal">×</button>
+            </header>
+            <div class="modal-body usage-help-body">
+                <section>
+                    <h3>1. 基準値を入力</h3>
+                    <ul>
+                        <li>開始前に SpO₂・脈拍・歩行距離・Borg を入力します。</li>
+                        <li>4 項目そろうまで Start は押せません。</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>2. 計測中の記録</h3>
+                    <ul>
+                        <li>Start 後、各分の入力ウィンドウが点灯したら「決定」で記録できます。</li>
+                        <li>ウィンドウ内なら上書き可。表示がない時に押しても記録されません。</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>3. 計測終了後</h3>
+                    <ul>
+                        <li>6 分経過後、回復時間（分・秒）を入力して保存します。</li>
+                        <li>「記録を表示」で 0〜6 分値と回復時間を確認できます。</li>
+                        <li>再測定は Reset で初期化してから。</li>
+                    </ul>
+                </section>
+            </div>
+            <footer class="modal-footer">
+                <button class="ghost" type="button" data-dismiss="usage-help-modal">閉じる</button>
+            </footer>
+        </div>
+    </div>
+
     <div class="modal hidden" id="recordModal" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle">
         <div class="modal-backdrop" data-dismiss="record-modal"></div>
         <div class="modal-content record-modal-content">

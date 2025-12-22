@@ -159,6 +159,8 @@
     const cancelUsageBtn = document.getElementById("cancelUsageBtn");
     const confirmUsageBtn = document.getElementById("confirmUsageBtn");
     const showUsageBtn = document.getElementById("showUsageBtn");
+    const usageHelpModal = document.getElementById("usageHelpModal");
+    const usageHelpDismissButtons = usageHelpModal ? usageHelpModal.querySelectorAll("[data-dismiss=usage-help-modal]") : [];
 
     const minuteBadges = new Map();
 
@@ -236,6 +238,17 @@
             window.location.href = "usage.html";
         });
 
+        usageHelpDismissButtons.forEach((btn) => {
+            btn.addEventListener("click", closeUsageHelpModal);
+        });
+        if (usageHelpModal) {
+            usageHelpModal.addEventListener("click", (event) => {
+                if (event.target.matches("[data-dismiss=usage-help-modal]")) {
+                    closeUsageHelpModal();
+                }
+            });
+        }
+
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape") {
                 if (!modal.classList.contains("hidden")) {
@@ -246,6 +259,8 @@
                     closeResetDialog();
                 } else if (!usageWarningDialog.classList.contains("hidden")) {
                     closeUsageWarningDialog();
+                } else if (usageHelpModal && !usageHelpModal.classList.contains("hidden")) {
+                    closeUsageHelpModal();
                 }
             }
         });
@@ -1432,8 +1447,12 @@
     }
 
     function syncModalOpenState() {
-        if (!modal.classList.contains("hidden") || !recordModal.classList.contains("hidden") || 
-            !resetDialog.classList.contains("hidden") || !usageWarningDialog.classList.contains("hidden")) {
+        const anyOpen = (!modal.classList.contains("hidden")
+            || !recordModal.classList.contains("hidden")
+            || !resetDialog.classList.contains("hidden")
+            || !usageWarningDialog.classList.contains("hidden")
+            || (usageHelpModal && !usageHelpModal.classList.contains("hidden")));
+        if (anyOpen) {
             document.body.classList.add("modal-open");
         } else {
             document.body.classList.remove("modal-open");
@@ -1441,13 +1460,7 @@
     }
 
     function handleUsageClick() {
-        // 計測が開始されている場合のみ警告を表示
-        if (state.timer.started) {
-            openUsageWarningDialog();
-        } else {
-            // 計測が開始されていない場合は直接遷移
-            window.location.href = "usage.html";
-        }
+        openUsageHelpModal();
     }
 
     function openUsageWarningDialog() {
@@ -1458,6 +1471,18 @@
     function closeUsageWarningDialog() {
         usageWarningDialog.classList.add("hidden");
         document.body.classList.remove("dialog-open");
+    }
+
+    function openUsageHelpModal() {
+        if (!usageHelpModal) return;
+        usageHelpModal.classList.remove("hidden");
+        syncModalOpenState();
+    }
+
+    function closeUsageHelpModal() {
+        if (!usageHelpModal) return;
+        usageHelpModal.classList.add("hidden");
+        syncModalOpenState();
     }
 
     function openResetDialog() {
