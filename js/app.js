@@ -2,12 +2,12 @@
     const MINUTES = Array.from({ length: 7 }, (_, minute) => minute); // 0〜6分
 
     const MINUTE_WINDOWS = {
-        1: { start: 50, end: 60 },
-        2: { start: 110, end: 120 },
-        3: { start: 170, end: 180 },
-        4: { start: 230, end: 240 },
-        5: { start: 290, end: 300 },
-        6: { start: 350, end: 360 }
+        1: { start: 50, end: 90 },
+        2: { start: 110, end: 150 },
+        3: { start: 170, end: 210 },
+        4: { start: 230, end: 270 },
+        5: { start: 290, end: 330 },
+        6: { start: 350, end: 390 }
     };
 
     const METRIC_ORDER = ["spo2", "pulse", "distance", "borg"];
@@ -945,7 +945,17 @@
         }
 
         const requiredMetrics = REQUIRED_MINUTE_METRICS[targetMinute] || [];
-        const missing = requiredMetrics.filter((metric) => state.currentValues[metric] === null);
+        const resolvedValues = {};
+        requiredMetrics.forEach((metric) => {
+            if (state.currentValues[metric] !== null) {
+                resolvedValues[metric] = state.currentValues[metric];
+                return;
+            }
+            const latestMinute = findLatestMinuteWithData(state.data[metric]);
+            resolvedValues[metric] = latestMinute !== null ? state.data[metric][latestMinute] : null;
+        });
+
+        const missing = requiredMetrics.filter((metric) => resolvedValues[metric] === null);
 
         if (missing.length > 0) {
             const labels = missing.map((metric) => METRICS[metric].label).join("・");
@@ -954,7 +964,18 @@
         }
 
         requiredMetrics.forEach((metricKey) => {
-            state.data[metricKey][targetMinute] = state.currentValues[metricKey];
+            const value = resolvedValues[metricKey];
+            state.data[metricKey][targetMinute] = value;
+            state.currentValues[metricKey] = value;
+        });
+
+        // オプション項目も入力があれば記録する（例: 距離を途中で入力した場合）
+        const optionalMetrics = METRIC_ORDER.filter((m) => !requiredMetrics.includes(m));
+        optionalMetrics.forEach((metricKey) => {
+            const value = state.currentValues[metricKey];
+            if (value !== null && value !== undefined) {
+                state.data[metricKey][targetMinute] = value;
+            }
         });
 
         state.minuteRecorded.add(targetMinute);
